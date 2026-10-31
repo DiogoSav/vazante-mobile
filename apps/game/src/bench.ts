@@ -1,0 +1,120 @@
+import type { GameRenderer } from '@vazante/view3d';
+import type { GameClient } from './client.ts';
+import { probe } from './probe.ts';
+
+export interface FrameBenchResult {
+  gpu: string;
+  width: number;
+  height: number;
+  pixelRatio: number;
+  frames: number;
+  seconds: number;
+  fps: number;
+  p50Ms: number;
+  p95Ms: number;
+  worstMs: number;
+  zombies: number;
+  soldiers: number;
+  meanTickMs: number;
+  /** Frames over 40 ms with what the loop was doing, to tell CPU stalls from GPU or compositor ones. */
+  hitches: Hitch[];
+  /** Main-thread tasks over 50 ms (Chromium long-task API). */
+  longTasks: { atS: number; ms: number }[];
+  /** Shader programs compiled while recording (should be 0), with their cache keys. */
+  newPrograms: number;
+  compiles: { atS: number; keys: string[] }[];
+}
+
+export interface Hitch {
+  atS: number;
+  ms: number;
+  renderMs: number;
+  otherMs: number;
+  programs: number;
+}
+
+/**
+ * Frame-time benchmark (`?bench`): a horde attacks the base in the tactical view at 1x while frame
+ * times are recorded. The result goes to the console, `window.vazanteBench` and a panel.
+ */
+export async function runFrameBench(client: GameClient, view: GameRenderer, attackers: number, seconds: number): Promise<FrameBenchResult> {
+  const map = view.map;
+  const base = map.sites.find((s) => s.kind === 'base')!;
+  const bx = ((base.x0 + base.x1 + 1) / 2) * map.cellSize;
+  const by = ((base.y0 + base.y1 + 1) / 2) * map.cellSize;
+  view.rig.centerOn(bx, by);
+  client.send({ type: 'set_speed', speed: 1 });
+  client.send({ type: 'debug_spawn', at: { x: bx, y: by - 70 }, count: attackers });
+  await wait(3000);
+  const frames: number[] = [];
+  const hitches: Hitch[] = [];
+  const longTasks: { atS: number; ms: number }[] = [];
+  const t0 = performance.now();
+  const programs0 = probe.programs;
+  const compiles: { atS: number; keys: string[] }[] = [];
+  let seen = programs0;
+  let obs: PerformanceObserver | null = null;
+  try {
+    obs = new PerformanceObserver((list) => {
+      for (const e of list.getEntries()) longTasks.push({ atS: (e.startTime - t0) / 1000, ms: e.duration });
+    });
+    obs.observe({ type: 'longtask', buffered: false });
+  } catch {
+    // Not every browser has the long-task API.
+  }
+  let tickMs = 0;
+  let tickN = 0;
+  const off = client.onFrame((f) => {
+    tickMs += f.stats.tickMs;
+    tickN++;
+  });
+  await new Promise<void>((resolve) => {
+    let last = performance.now();
+    const end = last + seconds * 1000;
+    const step = (now: number) => {
+      const ms = now - last;
+      frames.push(ms);
+      if (probe.programs > seen) {
+        const list = view.renderer.info.programs ?? [];
+        compiles.push({ atS: (now - t0) / 1000, keys: list.slice(seen).map((p) => `${p.name} ${p.cacheKey.replace(/\s+/g, ' ').slice(0, 400)}`) });
+        seen = probe.programs;
+      }
+      // probe holds the loop that ran just before this callback, i.e. the work of the slow frame.
+      if (ms > 40 && frames.length > 1) hitches.push({ atS: (now - t0) / 1000, ms, renderMs: probe.renderMs, otherMs: probe.shellMs + probe.inputMs + probe.audioMs, programs: probe.programs });
+      last = now;
+      if (now < end) requestAnimationFrame(step);
+      else resolve();
+    };
+    requestAnimationFrame(step);
+  });
+  off();
+  obs?.disconnect();
+  const sorted = frames.slice(1).sort((a, b) => a - b);
+  const total = sorted.reduce((s, x) => s + x, 0);
+  const f = client.state.frame!;
+  const gl = view.renderer.getContext();
+  const dbg = gl.getExtension('WEBGL_debug_renderer_info');
+  return {
+    gpu: dbg ? String(gl.getParameter(dbg.UNMASKED_RENDERER_WEBGL)) : 'unknown',
+    width: innerWidth,
+    height: innerHeight,
+    pixelRatio: devicePixelRatio,
+    frames: sorted.length,
+    seconds,
+    fps: (sorted.length * 1000) / total,
+    p50Ms: sorted[Math.floor(sorted.length * 0.5)],
+    p95Ms: sorted[Math.floor(sorted.length * 0.95)],
+    worstMs: sorted[sorted.length - 1],
+    zombies: f.stats.zombiesAlive,
+    soldiers: f.stats.soldiersAlive,
+    meanTickMs: tickN ? tickMs / tickN : 0,
+    hitches,
+    longTasks,
+    newPrograms: probe.programs - programs0,
+    compiles,
+  };
+}
+
+function wait(ms: number): Promise<void> {
+  return new Promise((r) => setTimeout(r, ms));
+}

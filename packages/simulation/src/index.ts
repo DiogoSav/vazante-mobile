@@ -1,0 +1,13 @@
+export { SimulationEngine } from './engine.ts';
+export { World, isActiveSoldier } from './world.ts';
+export { Grid } from './grid.ts';
+export { generateCityMap, generateSliceMap, type GeneratedMap } from './mapgen.ts';
+export { ZombiePool } from './zombies.ts';
+export { FlowJob, findPath, computeFlowField, FLOW_UNREACHABLE } from './navigation.ts';
+export { spawnSquad, rollZombieKind } from './spawn.ts';
+export { SCENARIO_IDS, buildMission, cityWar, createScenario, openField, type ScenarioId, type ScenarioOptions } from './scenarios/index.ts';
+export { formationOffset, slotPosition } from './systems/units.ts';
+export type { Soldier, Squad, DirectInput, Structure, Base, Vehicle } from './entities.ts';
+export { spawnTruck, distToSite } from './systems/logistics.ts';
+export { placementContext, buildTicks } from './systems/construction.ts';
+export { drivenAlive } from './systems/mission.ts';

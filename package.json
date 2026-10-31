@@ -1,0 +1,44 @@
+{
+  "name": "vazante-mobile",
+  "private": true,
+  "license": "AGPL-3.0-or-later",
+  "type": "module",
+  "packageManager": "pnpm@10.28.0",
+  "scripts": {
+    "dev": "pnpm --filter @vazante/game dev",
+    "build": "pnpm --filter @vazante/game build",
+    "typecheck": "tsc -p tsconfig.sim.json && tsc -p tsconfig.web.json && tsc -p tsconfig.tools.json && tsc -p apps/desktop/tsconfig.json --noEmit",
+    "lint": "eslint .",
+    "test": "vitest run",
+    "check": "pnpm typecheck && pnpm lint && pnpm test",
+    "sim": "tsx tools/headless-sim.ts",
+    "bench": "node tools/run-bundled.mjs tools/bench.ts",
+    "balance": "node tools/run-bundled.mjs tools/balance.ts",
+    "models": "tsx tools/prepare-models.ts",
+    "audio": "tsx tools/prepare-audio.ts",
+    "e2e": "playwright test",
+    "desktop": "pnpm --filter @vazante/desktop start"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.39.5",
+    "@gltf-transform/core": "4.2.1",
+    "@gltf-transform/functions": "4.2.1",
+    "@playwright/test": "1.63.0",
+    "@types/node": "^22.20.5",
+    "@vazante/kernel": "workspace:*",
+    "@vazante/shared": "workspace:*",
+    "@vazante/simulation": "workspace:*",
+    "esbuild": "0.28.2",
+    "eslint": "^9.39.5",
+    "tsx": "^4.23.15",
+    "typescript": "~5.9.3",
+    "typescript-eslint": "^8.72.1",
+    "vitest": "^3.2.7"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "electron",
+      "esbuild"
+    ]
+  }
+}

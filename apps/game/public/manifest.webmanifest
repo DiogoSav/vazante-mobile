@@ -1,0 +1,13 @@
+{
+  "name": "Vazante Mobile",
+  "short_name": "Vazante",
+  "description": "Estratégia e sobrevivência contra uma horda do tamanho de uma cidade, no celular.",
+  "lang": "pt-BR",
+  "start_url": "./",
+  "scope": "./",
+  "display": "fullscreen",
+  "orientation": "landscape",
+  "background_color": "#0d1013",
+  "theme_color": "#0d1013",
+  "icons": [{ "src": "favicon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }]
+}

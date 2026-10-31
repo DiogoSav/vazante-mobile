@@ -1,0 +1,17 @@
+node_modules/
+dist/
+*.log
+.vite/
+coverage/
+test-results/
+playwright-report/
+apps/desktop/dist/
+apps/desktop/game/
+apps/desktop/release/
+assets-src/
+
+# snapcraft
+/parts/
+/stage/
+/prime/
+*.snap
