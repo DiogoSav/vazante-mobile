@@ -1,9 +1,9 @@
 /**
- * Phones and tablets: touch is the main pointer (or `?mobile` in the address forces it, for testing
- * on a desktop). Decided once at start. On mobile the game takes touch gestures, shows a touch bar
- * in place of the keyboard shortcuts, scales the HUD down and leaves direct control out.
+ * Vazante Mobile is made for phones: always on. The game takes touch gestures, shows a touch bar in
+ * place of the keyboard shortcuts, scales the HUD down and leaves direct control out. Mouse and
+ * keyboard keep working, which helps testing on a desktop.
  */
-export const MOBILE = new URLSearchParams(location.search).has('mobile') || window.matchMedia('(pointer: coarse)').matches;
+export const MOBILE = true;
 
 /** HUD scale on mobile, on top of the player's own interface size: the desktop HUD on a phone in landscape. */
 export const MOBILE_UI_SCALE = 0.72;

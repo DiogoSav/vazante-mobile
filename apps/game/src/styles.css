@@ -1550,6 +1550,123 @@ input[type='checkbox'] {
   image-rendering: auto;
 }
 
+/* ----- Phones: touch bar along the left edge, drawers beside it ----- */
+.touchbar {
+  position: absolute;
+  top: 54px;
+  left: max(6px, env(safe-area-inset-left));
+  bottom: 8px;
+  width: 62px;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  overflow-y: auto;
+  pointer-events: auto;
+  scrollbar-width: none;
+}
+.touchbar .tb {
+  flex: 0 0 auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  min-height: 56px;
+  padding: 6px 2px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: var(--panel);
+  color: var(--text);
+  font: 600 11px/1.1 var(--display);
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+.touchbar .tb:active {
+  background: var(--panel-hi);
+}
+.touchbar .tb.on {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+.touchbar .tb:disabled {
+  color: var(--dim);
+  opacity: 0.6;
+}
+.mobile .leftcol {
+  left: calc(max(6px, env(safe-area-inset-left)) + 70px);
+  max-height: calc(100% - 66px);
+}
+.mobile .bottomcol {
+  left: calc(max(6px, env(safe-area-inset-left)) + 70px);
+  max-width: calc(100% - 330px);
+}
+
+/* Main menu on a short screen (a phone lying down): the title on the left, the buttons beside it
+   in two columns, the city row across the bottom of the panel. */
+@media (max-height: 560px) {
+  .menu-screen {
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+    gap: 5vw;
+    padding: 12px max(16px, env(safe-area-inset-right)) 12px max(16px, env(safe-area-inset-left));
+  }
+  .menu-title {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+  .menu-kicker {
+    font-size: 12px;
+    letter-spacing: 0.24em;
+  }
+  .menu-title h1 {
+    font-size: clamp(48px, 9vw, 96px);
+  }
+  .menu-version {
+    position: static;
+    font-size: 10px;
+  }
+  .menu {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 6px;
+    width: min(520px, 58vw);
+    padding: 10px;
+  }
+  .menu button {
+    min-width: 0;
+    min-height: 44px;
+    padding: 8px 12px;
+    font-size: 15px;
+    white-space: nowrap;
+  }
+  .menu button:hover {
+    padding-left: 12px;
+  }
+  .menu button .muted {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  /* An odd number of buttons: the first (continue or new game) takes the whole row. */
+  .menu > button:first-of-type:nth-last-of-type(odd) {
+    grid-column: 1 / -1;
+  }
+  .menu .city {
+    grid-column: 1 / -1;
+    margin-top: 2px;
+    padding-top: 8px;
+    flex-wrap: wrap;
+    gap: 4px;
+  }
+  .menu .city button {
+    min-height: 0;
+  }
+}
+
 @media (max-width: 1100px) {
   .topbar {
     gap: 8px;

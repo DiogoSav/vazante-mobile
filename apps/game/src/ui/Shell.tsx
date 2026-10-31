@@ -37,6 +37,7 @@ function MainMenu({ shell, seed }: { shell: Shell; seed: number }) {
           {t('menu.subtitle')}
         </div>
         <h1>{t('app.title')}</h1>
+        <div className="menu-version muted">{t(shell.desktop ? 'menu.versionDesktop' : 'menu.version')}</div>
       </div>
       <nav className="menu panel">
         {latest && (
@@ -105,7 +106,6 @@ function MainMenu({ shell, seed }: { shell: Shell; seed: number }) {
           </button>
         </div>
       </nav>
-      <div className="menu-version muted">{t(shell.desktop ? 'menu.versionDesktop' : 'menu.version')}</div>
     </div>
   );
 }

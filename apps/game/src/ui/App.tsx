@@ -51,8 +51,13 @@ import {
   ShieldHalf,
   Wrench,
   Zap,
+  Maximize,
+  Menu,
+  SquareDashed,
+  X,
   type LucideIcon,
 } from "lucide-react";
+import { MOBILE, toggleFullscreen } from "../mobile.ts";
 import {
   clockHours,
   daylight,
@@ -133,6 +138,8 @@ export function App({ client, input, view, shell }: Props) {
     const id = setInterval(() => setBand(view.rig.band), 200);
     return () => clearInterval(id);
   }, [view]);
+  // On a phone the squad list and the build bar are drawers opened from the touch bar.
+  const [drawer, setDrawer] = useState<Drawer>(null);
 
   const f = state.frame;
   if (!f) return <div className="boot">{t("boot.loading")}</div>;
@@ -153,7 +160,8 @@ export function App({ client, input, view, shell }: Props) {
           band={input.inDirect ? "direct" : band}
           onSpeed={(speed) => client.send({ type: "set_speed", speed })}
         />
-        {!input.inDirect && (
+        {MOBILE && <TouchBar state={state} input={input} view={view} shell={shell} drawer={drawer} setDrawer={setDrawer} />}
+        {!input.inDirect && (!MOBILE || drawer === "squads") && (
           <div className="leftcol">
             {f.mission && (
               <MissionPanel
@@ -167,7 +175,10 @@ export function App({ client, input, view, shell }: Props) {
             <SquadList
               frame={f}
               selected={state.selected}
-              onSelect={(id) => input.select([id])}
+              onSelect={(id) => {
+                input.select([id]);
+                if (MOBILE) setDrawer(null);
+              }}
               onCenter={(q) => view.rig.centerOn(q.anchorX, q.anchorY)}
             />
             <VehicleList
@@ -187,13 +198,14 @@ export function App({ client, input, view, shell }: Props) {
         )}
         {!input.inDirect && (
           <div className="bottomcol">
-            <BuildPanel frame={f} input={input} />
+            {(!MOBILE || drawer === "build" || input.build.active) && <BuildPanel frame={f} input={input} />}
             {state.structure !== null ? (
               <StructurePanel frame={f} id={state.structure} input={input} />
             ) : state.vehicle !== null ? (
               <VehiclePanel frame={f} id={state.vehicle} input={input} />
             ) : (
-              <SelectionPanel squads={selected} frame={f} input={input} />
+              // On a phone an empty selection panel only takes room from the map.
+              (!MOBILE || selected.length > 0) && <SelectionPanel squads={selected} frame={f} input={input} />
             )}
           </div>
         )}
@@ -214,6 +226,52 @@ export function App({ client, input, view, shell }: Props) {
       {input.box && <div className="box" style={boxStyle(input.box)} />}
       {input.faceArrow && <FaceArrow a={input.faceArrow} />}
     </>
+  );
+}
+
+/** The drawer open on a phone: the squad list, the build bar, or none. */
+type Drawer = "squads" | "build" | null;
+
+/**
+ * Touch bar (phones): a column of buttons along the left edge in place of the keyboard. The squad
+ * list and the build bar open as drawers; area selection makes one-finger drags draw a box; cancel
+ * drops the selection or leaves build mode; menu, map and full screen as their keys would.
+ */
+function TouchBar({
+  state: st,
+  input,
+  view,
+  shell,
+  drawer,
+  setDrawer,
+}: {
+  state: { selected: readonly number[]; vehicle: number | null; structure: number | null };
+  input: InputController;
+  view: GameRenderer;
+  shell: Shell;
+  drawer: Drawer;
+  setDrawer: (d: Drawer) => void;
+}) {
+  const somethingToCancel = input.build.active || st.vehicle !== null || st.structure !== null || st.selected.length > 0;
+  const toggle = (d: Exclude<Drawer, null>) => setDrawer(drawer === d ? null : d);
+  const buttons: { icon: LucideIcon; label: string; on?: boolean; disabled?: boolean; act: () => void }[] = [
+    { icon: Users, label: t("touch.squads"), on: drawer === "squads", act: () => toggle("squads") },
+    { icon: Hammer, label: t("touch.build"), on: drawer === "build" || input.build.active, act: () => (input.build.active ? input.setBuild(null) : toggle("build")) },
+    { icon: SquareDashed, label: t("touch.area"), on: input.areaSelect, act: () => input.toggleAreaSelect() },
+    { icon: MapIcon, label: t("touch.map"), act: () => view.rig.toggleMap() },
+    { icon: X, label: t("touch.cancel"), disabled: !somethingToCancel, act: () => input.cancel() },
+    { icon: Menu, label: t("touch.menu"), act: () => shell.escape() },
+    { icon: Maximize, label: t("touch.fullscreen"), act: () => void toggleFullscreen() },
+  ];
+  return (
+    <div className="touchbar">
+      {buttons.map((b) => (
+        <button key={b.label} className={`tb ${b.on ? "on" : ""}`} disabled={b.disabled} onClick={b.act} aria-label={b.label}>
+          <b.icon size={22} />
+          <span>{b.label}</span>
+        </button>
+      ))}
+    </div>
   );
 }
 
@@ -1044,15 +1102,17 @@ function SelectionPanel({
             <span>{t("sel.repair")}</span>
           </button>
         )}
-        <button
-          className="cmd primary"
-          title={t("tip.direct")}
-          onClick={() => input.toggleDirect()}
-        >
-          <Key k="TAB" />
-          <Gamepad2 size={18} />
-          <span>{t("sel.direct")}</span>
-        </button>
+        {!MOBILE && (
+          <button
+            className="cmd primary"
+            title={t("tip.direct")}
+            onClick={() => input.toggleDirect()}
+          >
+            <Key k="TAB" />
+            <Gamepad2 size={18} />
+            <span>{t("sel.direct")}</span>
+          </button>
+        )}
       </div>
     </div>
   );
